@@ -1,0 +1,15 @@
+{
+  "name": "ftp-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "Server.ts",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "nur": "ts-node-dev Server.ts",
+    "unr": "nodemon Server.ts"
+  },
+  "keywords": [],
+  "author": "Álviss Raghnall <isiomastewart@gmail.com>",
+  "license": "ISC"
+}
