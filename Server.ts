@@ -10,7 +10,7 @@ let clientSocket: Socket;
 let dataPort: number;
 let version: string;
 
-const file = (filePath: string): string => { 
+export const file = (filePath: string): string => { 
   return readFileSync(filePath, "utf8");
 }
 
@@ -52,7 +52,7 @@ const server = createServer(socket => {
 })
 .on("error", () => { 
   throw new Error("Could not create server.") 
-  process.exit();
+  process.exit(1);
 })
 
 

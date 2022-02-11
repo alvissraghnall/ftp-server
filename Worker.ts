@@ -1,4 +1,6 @@
 import type { Socket } from "net";
+import { file } from "./Server";
+import type { validLogins } from "./types";
 
 enum userStatus {
   NOTLOGGEDIN, ENTEREDUSERNAME, LOGGEDIN, ANONYMOUS
@@ -34,8 +36,7 @@ export default class Handler {
   }
   
   /**
-   * Parse client input, from buffer, into valid strings,
-   * and pushes handling of individual commands to
+   * Parse client input, from buffer, into valid strings, and pushes handling of individual commands to
    * various handlers availale.
   */
   
@@ -43,13 +44,19 @@ export default class Handler {
     console.log("===========");
     let [cmd, ...args] = cmdargs.split(" ");
     cmd = cmd.toUpperCase();
+    //args = args.join(" ");
     this.debugPrintOut(`Command: ${cmd} \n Args: ${typeof args}`);
     switch(cmd){
       case "USER":
-        this.handleUserComm(args);
-        break;
+        console.log("user case");
+        this.handleUser(args);
+        //break;
         
       //case 
+      
+      default:
+        this.handleUser(args);
+      //  break;
     }
   }
   /**
@@ -66,9 +73,21 @@ export default class Handler {
    * Accepts array of string arguments passed via the command line, as arguments.
    * 
   */
-  
-  private handleUserComm(args: string | string[]) {
-    
+  private handleUser(args: string[]): void {
+    if(this.userLoggedInStatus === userStatus.LOGGEDIN){
+      this.sendToClient("530 User is already logged in.");
+    } else {
+      console.log(args);
+      let username: string;
+      this.sendToClient(`Name (alvissraghnall.io:yourlogin): `);
+      this.clientSock.on("data", (chunk: Buffer) => {
+        username = chunk.toString();
+      });
+      if(this.validLogins().find(username => username.toLowerCase())){
+        this.userLoggedInStatus = userStatus.ENTEREDUSERNAME;
+        this.sendToClient(`331 User name valid. Password required for authentication.`);
+      }
+    }
   }
   
   /**
@@ -82,6 +101,16 @@ export default class Handler {
       console.error(error);
       process.exit(1);
     }
+  }
+  
+  private sendToClient(msg: string): void {
+    this.clientSock.write(msg);
+  }
+  
+  private validLogins(): validLogins {
+    const valLogins = JSON.parse(file("./validDetails.json"));
+    console.log(valLogins);
+    return valLogins;
   }
 
 }
