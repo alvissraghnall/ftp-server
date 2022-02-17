@@ -55,7 +55,8 @@ export default class Handler {
       //case 
       
       default:
-        this.handleUser(args);
+        this.sendToClient("Please enter a valid FTP command. \n");
+        //this.handleUser(args);
       //  break;
     }
   }
@@ -77,15 +78,22 @@ export default class Handler {
     if(this.userLoggedInStatus === userStatus.LOGGEDIN){
       this.sendToClient("530 User is already logged in.");
     } else {
-      console.log(args);
       let username: string;
-      this.sendToClient(`Name (alvissraghnall.io:yourlogin): `);
-      this.clientSock.on("data", (chunk: Buffer) => {
-        username = chunk.toString();
-      });
-      if(this.validLogins().find(username => username.toLowerCase())){
+      console.log(args);
+      if(args){
+        username = args[0].split("\\")[0].toLowerCase();
+        console.log("\n un: ", username);
+      } else {
+        this.sendToClient(`Name (alvissraghnall.io:yourlogin): `);
+        this.clientSock.on("data", (chunk: Buffer) => {
+          username = chunk.toString().trim().toLowerCase();
+        });
+      }
+      if(this.validLogins().find(user => user.name.toLowerCase() === username)){
         this.userLoggedInStatus = userStatus.ENTEREDUSERNAME;
         this.sendToClient(`331 User name valid. Password required for authentication.`);
+      } else {
+        this.sendToClient("530 User name invalid");
       }
     }
   }

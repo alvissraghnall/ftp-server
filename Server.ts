@@ -33,7 +33,7 @@ const server = createServer(socket => {
 })  /**
  Creates a new instance of the Handler class on every client connection.
 */
-.on("connection", async () => {
+.on("connection", async (socket) => {
   server.getConnections((err, count) => {
     if(err) throw err;
     noOfConn = count;
@@ -41,7 +41,7 @@ const server = createServer(socket => {
     
   });
 
-  
+  socket.write("genius!");
   dataPort = PORT + ++noOfConn;
   const handler = new Handler(clientSocket, dataPort);
   
