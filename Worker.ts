@@ -11,9 +11,11 @@ export default class Handler {
   private endCommands: boolean = false;
   private userLoggedInStatus: userStatus = userStatus.NOTLOGGEDIN;
   private debugMode = true;
+  private userName!: string;
   
   constructor(private clientSock: Socket, readonly dataPort: number) {
     this.trfMode = "passive";
+    
   }
   
   /**
@@ -43,14 +45,18 @@ export default class Handler {
   private commander(cmdargs: string) {
     console.log("===========");
     let [cmd, ...args] = cmdargs.split(" ");
-    cmd = cmd.toUpperCase();
+    cmd = cmd.trim().toUpperCase();
+    let mainArg = args[0].split("\\")[0].replace(/(\n|\r)+$/, '').toLowerCase();
     //args = args.join(" ");
-    this.debugPrintOut(`Command: ${cmd} \n Args: ${typeof args}`);
+    this.debugPrintOut(`Command: ${cmd} \n Args: ${typeof args} ${args.length}`);
     switch(cmd){
       case "USER":
-        console.log("user case");
-        this.handleUser(args);
-        //break;
+        //console.log("user case");
+        args.length === 0 ? this.handleUser() : this.handleUser(mainArg);
+        break;
+      case "PASS":
+        args.length === 0 ? this.handlePass() : this.handlePass(mainArg);
+        break;
         
       //case 
       
@@ -74,29 +80,87 @@ export default class Handler {
    * Accepts array of string arguments passed via the command line, as arguments.
    * 
   */
-  private handleUser(args: string[]): void {
+  private async handleUser(mainArg?: string): Promise<void> {
     if(this.userLoggedInStatus === userStatus.LOGGEDIN){
-      this.sendToClient("530 User is already logged in.");
+      this.sendToClient("530 User is already logged in.\n");
     } else {
       let username: string;
-      console.log(args);
-      if(args){
-        username = args[0].split("\\")[0].toLowerCase();
-        console.log("\n un: ", username);
+      console.log(mainArg);
+      if(mainArg){
+        username = mainArg;
+        console.log("\n un: %s", username);
+        this.checkValidLogin(username);
       } else {
         this.sendToClient(`Name (alvissraghnall.io:yourlogin): `);
         this.clientSock.on("data", (chunk: Buffer) => {
           username = chunk.toString().trim().toLowerCase();
-        });
+          this.checkValidLogin(username);
+        })
       }
-      if(this.validLogins().find(user => user.name.toLowerCase() === username)){
-        this.userLoggedInStatus = userStatus.ENTEREDUSERNAME;
-        this.sendToClient(`331 User name valid. Password required for authentication.`);
+      
+    }
+  }
+  
+  
+  /*////********
+  
+  !!!!!!  HELPER METHODS START  !!!!!
+  
+  *****//////
+  
+  /**
+  Check if inputted username is valid (present amongst the list of valid logins).
+  Used by this.handleUser(args?: string)
+  */
+  private checkValidLogin(username: string) {
+    if (this.validLogins().find(user => user.name.toLowerCase() === username)) {
+      console.log(username)
+      this.userLoggedInStatus = userStatus.ENTEREDUSERNAME;
+      this.userName = username;
+      this.sendToClient(`331 User name valid. Password required for authentication.\n`);
+    } else {
+      this.sendToClient("530 User name invalid\n");
+    }
+  }
+  
+  
+  
+  
+    /*////********
+    
+    !!!!!!  HELPER METHODS END  !!!!!
+    
+    *****//////
+  private checkValidPass(pass: string) {
+    
+  }
+    
+    
+  /** 
+   * First, checks if user status is ‘ENTEREDUSERNAME’, else throws error (telling client to first login[using ‘user’ command.])
+   * Then, ...
+   
+  */
+  private handlePass(arg?: string): void {
+    if(this.userLoggedInStatus === userStatus.LOGGEDIN){
+      this.sendToClient("530 User already logged in");
+    } else if(this.userLoggedInStatus === userStatus.NOTLOGGEDIN) {
+      this.sendToClient("User not logged in.");
+    } else if(this.userLoggedInStatus === userStatus.ENTEREDUSERNAME) {
+      let password: string;
+      if(arg) {
+        password = arg;
+        
       } else {
-        this.sendToClient("530 User name invalid");
+        this.sendToClient(`331 Password required for ${this.userName }:  `);
+        this.clientSock.on("data", (chunk: Buffer) => {
+          password = chunk.toString().trim().toLowerCase();
+        })
       }
     }
   }
+  
+  
   
   /**
   

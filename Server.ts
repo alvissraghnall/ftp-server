@@ -41,7 +41,7 @@ const server = createServer(socket => {
     
   });
 
-  socket.write("genius!");
+  //socket.write("genius!");
   dataPort = PORT + ++noOfConn;
   const handler = new Handler(clientSocket, dataPort);
   
